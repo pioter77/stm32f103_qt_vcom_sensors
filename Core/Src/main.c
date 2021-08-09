@@ -110,27 +110,23 @@ int main(void)
   LL_GPIO_SetOutputPin(Rel2_GPIO_Port, Rel2_Pin);
   LL_GPIO_SetOutputPin(Rel3_GPIO_Port, Rel3_Pin);
   LL_GPIO_SetOutputPin(Rel4_GPIO_Port, Rel4_Pin);
-  uint8_t getdevid[2]={0xD0,0};
-  uint8_t config_hum[2]={(0xF2 & 0x7F),0x02};
-  uint8_t config_ctrl_meas[2]={(0xF4 & 0x7F),0x4B};
+//  uint8_t getdevid[2]={0xD0,0};
+//  uint8_t config_hum[2]={(0xF2 & 0x7F),0x02};
+//  uint8_t config_ctrl_meas[2]={(0xF4 & 0x7F),0x4B};
   uint8_t readburst3_fullbit[11]={0xF7,0,0,0,0,0,0,0,0,0,0};
 
   //set the bme 280
 
-  spi_half_init(&spi2);
-isReceiveComplete=1;
-while(isReceiveComplete==0){	//wait for finishing
-}
-
-isAnswerAllowed=0;
-spi_half_send(&spi2, getdevid,2);
-while(isReceiveComplete==0);	//wait for finishing
-isAnswerAllowed=0;
-spi_half_send(&spi2, config_hum,2);
-
-while(isReceiveComplete==0);	//wait for finishing
-isAnswerAllowed=0;
-spi_half_send(&spi2, config_ctrl_meas,2);
+//  spi_half_init(&spi2);
+//spi2.is_receive_complete=1;
+//while(spi2.is_receive_complete==0){	//wait for finishing
+//}
+//spi_half_send(&spi2, getdevid,2);
+//while(spi2.is_receive_complete==0);	//wait for finishing
+//spi_half_send(&spi2, config_hum,2);
+//while(spi2.is_receive_complete==0);	//wait for finishing
+//spi_half_send(&spi2, config_ctrl_meas,2);
+  bme280_init(&bme280_2,BME280_READOUT_20bit, BME280_READOUT_20bit, BME280_READOUT_20bit);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -138,13 +134,13 @@ spi_half_send(&spi2, config_ctrl_meas,2);
   while (1)
   {
 //	   CDC_Transmit_FS(data1,29);
-	  while(isReceiveComplete==0){
+//	  while(spi2.is_receive_complete==0){
 		  //wait for finishing
-	  }
+//	  }
 //example
-		isAnswerAllowed=1;
-		spi_half_send_n_receive(&spi2, readburst3_fullbit, 10, recBufferSPI2, 10);
-
+//		spi2.is_answer_allowed=1;
+//		spi_half_send_n_receive(&spi2, readburst3_fullbit, 10, recBufferSPI2, 10);
+	  bme280_get_burst(&bme280_2);
 //	  	 	CDC_Transmit_FS(recBufferSPI2, 8);
 	  switch (recBuffer[0]) {
 		case 0x11:

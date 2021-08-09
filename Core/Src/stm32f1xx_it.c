@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "main.h"
 #include "dma.h"
+#include "spi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -207,17 +208,17 @@ void SysTick_Handler(void)
 void DMA1_Channel4_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
-	if(LL_DMA_IsActiveFlag_TC4(DMA1)){
-		LL_DMA_ClearFlag_TC4(DMA1);
-			spi_disable(SPI2);
-			spi_dma_rx_disable();
+	if(LL_DMA_IsActiveFlag_TC4(spi2.dma)){
+		LL_DMA_ClearFlag_TC4(spi2.dma);
+			spi_half_disable(&spi2);
+			spi_half_dma_rx_disable(&spi2);
 			LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
-			isReceiveComplete=1;
+			spi2.is_receive_complete=1;
 	}
-	if(LL_DMA_IsActiveFlag_TE4(DMA1))
+	if(LL_DMA_IsActiveFlag_TE4(spi2.dma))
 	{
 //		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
-		LL_DMA_ClearFlag_TE4(DMA1);
+		LL_DMA_ClearFlag_TE4(spi2.dma);
 
 //		LL_DMA_ClearFlag_
 //		isReceiveComplete=1;	//zakonczenie transmisji
@@ -240,25 +241,25 @@ void DMA1_Channel4_IRQHandler(void)
 void DMA1_Channel5_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel5_IRQn 0 */
-if(LL_DMA_IsActiveFlag_TC5(DMA1)){
-	LL_DMA_ClearFlag_TC5(DMA1);
+if(LL_DMA_IsActiveFlag_TC5(spi2.dma)){
+	LL_DMA_ClearFlag_TC5(spi2.dma);
 //	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
 //	LL_SPI_EnableIT_TXE(SPI2);
 //	if(isAnswerAllowed)
 //	{
 //	}
 
-	if(!isAnswerAllowed)
+	if(!spi2.is_answer_allowed)
 	{
-		LL_SPI_EnableIT_TXE(SPI2);
+		LL_SPI_EnableIT_TXE(spi2.spi);
 
-	}else if(isAnswerAllowed)
+	}else if(spi2.is_answer_allowed)
 	{
 
 	}
 	spi_dma_tx_disable();
-}else if(LL_DMA_IsActiveFlag_TE5(DMA1)){
-	LL_DMA_ClearFlag_TE5(DMA1);
+}else if(LL_DMA_IsActiveFlag_TE5(spi2.dma)){
+	LL_DMA_ClearFlag_TE5(spi2.dma);
 }
   /* USER CODE END DMA1_Channel5_IRQn 0 */
 
@@ -289,11 +290,11 @@ void SPI2_IRQHandler(void)
   /* USER CODE BEGIN SPI2_IRQn 0 */
 if(LL_SPI_IsActiveFlag_TXE(SPI2))
 {
-	LL_SPI_DisableIT_TXE(SPI2);
-	while(LL_SPI_IsActiveFlag_BSY(SPI2));
-	spi_disable(SPI2);
+	LL_SPI_DisableIT_TXE(spi2.spi);
+	while(LL_SPI_IsActiveFlag_BSY(spi2.spi));
+	spi_half_disable(&spi2);
 	LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
-	isReceiveComplete=1;
+	spi2.is_receive_complete=1;
 //	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_5);
 //	while(LL_SPI_IsActiveFlag_BSY(SPI2))	;	//waoit for finishing spi operations
 //

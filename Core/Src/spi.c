@@ -153,7 +153,7 @@ void spi_half_disable(t_spi_ctrl *spi){
 }
 void spi_half_dma_tx_enable(t_spi_ctrl *spi){
 	//todo: tu bylo isrecivecompletew=0;
-	isReceiveComplete=0;
+	spi->is_receive_complete=0;
 	LL_DMA_EnableIT_TC(spi->dma,(uint32_t)(spi->dmaTx));
 	LL_DMA_EnableIT_TE(spi->dma, (uint32_t)(spi->dmaTx));
 	LL_GPIO_ResetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
@@ -175,17 +175,17 @@ void spi_half_dma_rx_disable(t_spi_ctrl *spi){
 	LL_DMA_DisableIT_TE(spi->dma, (uint32_t)(spi->dmaRx));
 }
 void spi_half_send(t_spi_ctrl *spi,uint8_t *tx_data,uint8_t tx_len){
+	spi->is_answer_allowed=0;
 	spi_half_disable(spi);
 	spi_half_dma_rx_disable(spi);
 	spi_half_dma_tx_disable(spi);
-
-
 	LL_DMA_ConfigAddresses(spi->dma, (uint32_t)(spi->dmaTx), (uint32_t)tx_data, LL_SPI_DMA_GetRegAddr(spi->spi), LL_DMA_GetDataTransferDirection(spi->dma, (uint32_t)(spi->dmaTx)));
 	spi_half_set_tx_data_len(spi, tx_len);
 	spi_half_enable(spi);
 	spi_half_dma_tx_enable(spi);
 }
 void spi_half_send_n_receive(t_spi_ctrl *spi,uint8_t *tx_data,uint8_t tx_len,uint8_t *rx_data,uint8_t rx_len){
+	spi->is_answer_allowed=1;
 	spi_half_disable(spi);
 	spi_half_dma_rx_disable(spi);
 	spi_half_dma_tx_disable(spi);
