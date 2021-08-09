@@ -21,7 +21,14 @@
 #include "spi.h"
 
 /* USER CODE BEGIN 0 */
-
+   t_spi_ctrl spi2={
+		  .is_answer_allowed=0,
+		  .is_receive_complete=1,
+		  .spi=SPI2,
+		  .dma=DMA1,
+		  .dmaTx=LL_DMA_CHANNEL_5,
+		  .dmaRx=LL_DMA_CHANNEL_4,
+  };
 /* USER CODE END 0 */
 
 /* SPI2 init function */
@@ -112,7 +119,86 @@ void MX_SPI2_Init(void)
 }
 
 /* USER CODE BEGIN 1 */
+void spi_half_init(t_spi_ctrl *spi){
+	LL_DMA_DisableChannel(spi->dma, (uint32_t)(spi->dmaTx));		//todo: tu moze byc problem bo  bylo basing intiger to a pointer
+	LL_DMA_ClearFlag_TC5(spi->dma);
+	LL_DMA_ClearFlag_TE5(spi->dma);
+	LL_SPI_EnableDMAReq_TX(spi->spi);
 
+	//rx:
+	LL_DMA_DisableChannel(spi->dma, (uint32_t)(spi->dmaRx));
+	LL_DMA_ClearFlag_TC4(spi->dma);	//todo: this can ble ommited when porting when changed to function pointer in spi struct
+	LL_DMA_ClearFlag_TE4(spi->dma);
+	LL_SPI_EnableDMAReq_RX(spi->spi);
+}
+void spi_half_set_tx_data_len(t_spi_ctrl *spi, uint8_t len){
+	LL_DMA_DisableChannel(spi->dma, (uint32_t)(spi->dmaTx));
+	LL_DMA_ClearFlag_TC5(spi->dma);
+	LL_DMA_ClearFlag_TE5(spi->dma);
+	LL_DMA_SetDataLength(spi->dma, spi->dmaTx, (uint32_t)len);
+//	LL_DMA_ConfigAddresses(spi->dma, (uint32_t)(spi->dmaTx), (uint32_t)spi->txBuff, LL_SPI_DMA_GetRegAddr(spi->spi), LL_DMA_GetDataTransferDirection(spi->dma, (uint32_t)(spi->dmaTx)));
+}
+void spi_half_set_rx_data_len(t_spi_ctrl *spi, uint8_t len){
+	LL_DMA_DisableChannel(spi->dma, (uint32_t)(spi->dmaRx));
+	LL_DMA_ClearFlag_TC4(spi->dma);	//todo: this can ble ommited when porting when changed to function pointer in spi struct
+	LL_DMA_ClearFlag_TE4(spi->dma);
+//	LL_DMA_ConfigAddresses(spi->dma, (uint32_t)(spi->dmaRx), LL_SPI_DMA_GetRegAddr(spi->spi), (uint32_t)spi->rxBuff, LL_DMA_GetDataTransferDirection(spi->dma, (uint32_t)(spi->dmaRx)));
+		LL_DMA_SetDataLength(spi->dma, spi->dmaRx, (uint32_t)len);
+}
+void spi_half_enable(t_spi_ctrl *spi){
+	LL_SPI_Enable(spi->spi);
+}
+void spi_half_disable(t_spi_ctrl *spi){
+	LL_SPI_Disable(spi->spi);
+}
+void spi_half_dma_tx_enable(t_spi_ctrl *spi){
+	//todo: tu bylo isrecivecompletew=0;
+	isReceiveComplete=0;
+	LL_DMA_EnableIT_TC(spi->dma,(uint32_t)(spi->dmaTx));
+	LL_DMA_EnableIT_TE(spi->dma, (uint32_t)(spi->dmaTx));
+	LL_GPIO_ResetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
+	LL_DMA_EnableChannel(spi->dma, (uint32_t)(spi->dmaTx));
+}
+void spi_half_dma_tx_disable(t_spi_ctrl *spi){
+	LL_DMA_DisableChannel(spi->dma, (uint32_t)(spi->dmaTx));
+	LL_DMA_ClearFlag_TC5(spi->dma);
+	LL_DMA_ClearFlag_TE5(spi->dma);
+}
+void spi_half_dma_rx_enable(t_spi_ctrl *spi){
+	LL_DMA_EnableIT_TC(spi->dma, (uint32_t)(spi->dmaRx));
+	LL_DMA_EnableIT_TE(spi->dma, (uint32_t)(spi->dmaRx));
+	LL_DMA_EnableChannel(spi->dma, (uint32_t)(spi->dmaRx));
+}
+void spi_half_dma_rx_disable(t_spi_ctrl *spi){
+	LL_DMA_DisableChannel(spi->dma, (uint32_t)(spi->dmaRx));
+	LL_DMA_DisableIT_TC(spi->dma, (uint32_t)(spi->dmaRx));
+	LL_DMA_DisableIT_TE(spi->dma, (uint32_t)(spi->dmaRx));
+}
+void spi_half_send(t_spi_ctrl *spi,uint8_t *tx_data,uint8_t tx_len){
+	spi_half_disable(spi);
+	spi_half_dma_rx_disable(spi);
+	spi_half_dma_tx_disable(spi);
+
+
+	LL_DMA_ConfigAddresses(spi->dma, (uint32_t)(spi->dmaTx), (uint32_t)tx_data, LL_SPI_DMA_GetRegAddr(spi->spi), LL_DMA_GetDataTransferDirection(spi->dma, (uint32_t)(spi->dmaTx)));
+	spi_half_set_tx_data_len(spi, tx_len);
+	spi_half_enable(spi);
+	spi_half_dma_tx_enable(spi);
+}
+void spi_half_send_n_receive(t_spi_ctrl *spi,uint8_t *tx_data,uint8_t tx_len,uint8_t *rx_data,uint8_t rx_len){
+	spi_half_disable(spi);
+	spi_half_dma_rx_disable(spi);
+	spi_half_dma_tx_disable(spi);
+
+	spi_half_set_tx_data_len(spi, tx_len);
+	LL_DMA_ConfigAddresses(spi->dma, (uint32_t)(spi->dmaTx), (uint32_t)tx_data, LL_SPI_DMA_GetRegAddr(spi->spi), LL_DMA_GetDataTransferDirection(spi->dma, (uint32_t)(spi->dmaTx)));
+	//rx:
+	spi_half_set_rx_data_len(spi, rx_len);
+	LL_DMA_ConfigAddresses(spi->dma, (uint32_t)(spi->dmaRx), LL_SPI_DMA_GetRegAddr(spi->spi), (uint32_t)rx_data, LL_DMA_GetDataTransferDirection(spi->dma, (uint32_t)(spi->dmaRx)));
+	spi_half_enable(spi);
+	spi_half_dma_tx_enable(spi);
+	spi_half_dma_rx_enable(spi);
+}
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

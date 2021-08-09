@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "stdio.h"
+#include "bme280_lib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -115,49 +116,21 @@ int main(void)
   uint8_t readburst3_fullbit[11]={0xF7,0,0,0,0,0,0,0,0,0,0};
 
   //set the bme 280
-//  LL_DMA_SetDataTransferDirection(DMAx, Channel, Direction)
-//  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_CHANNEL_4, (uint32_t)recBuffer);
-//  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_CHANNEL_4, SPI2->DR);
+
+  spi_half_init(&spi2);
 isReceiveComplete=1;
-
 while(isReceiveComplete==0){	//wait for finishing
-
 }
 
+isAnswerAllowed=0;
+spi_half_send(&spi2, getdevid,2);
+while(isReceiveComplete==0);	//wait for finishing
+isAnswerAllowed=0;
+spi_half_send(&spi2, config_hum,2);
 
-
-  isAnswerAllowed=0;
-//  dma_init_tx(2,getdevid);
-  spi_dma_tx_init(2, getdevid);
-//	  spi_dma_rx_init(1, recBuffer);
-	  spi_enable(SPI2);
-	  spi_dma_tx_enable();
-//  LL_mDelay(1);
-//  LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
-//  LL_mDelay(1);
-
-//  while(!isReceiveComplete);	//wait
-  while(isReceiveComplete==0);	//wait for finishing
-  isAnswerAllowed=0;
-//  dma_init_tx(2,config_hum);
-  spi_dma_tx_init(2, config_hum);
-  spi_enable(SPI2);
-  spi_dma_tx_enable();
-//  LL_mDelay(1);
-//  LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
-//  LL_mDelay(1);
-
-//  while(!isReceiveComplete);	//wait
-  while(isReceiveComplete==0);	//wait for finishing
-  isAnswerAllowed=0;
-//  dma_init_tx(2,config_ctrl_meas);
-  spi_dma_tx_init(2, config_ctrl_meas);
-  spi_enable(SPI2);
-  spi_dma_tx_enable();
-//  LL_mDelay(1);
-
-
-//  LL_mDelay(1);
+while(isReceiveComplete==0);	//wait for finishing
+isAnswerAllowed=0;
+spi_half_send(&spi2, config_ctrl_meas,2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -165,22 +138,13 @@ while(isReceiveComplete==0){	//wait for finishing
   while (1)
   {
 //	   CDC_Transmit_FS(data1,29);
+	  while(isReceiveComplete==0){
+		  //wait for finishing
+	  }
+//example
+		isAnswerAllowed=1;
+		spi_half_send_n_receive(&spi2, readburst3_fullbit, 10, recBufferSPI2, 10);
 
-
-	//  LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
-	  while(isReceiveComplete==0);	//wait for finishing
-	  isAnswerAllowed=1;
-	  //	  	  dma_init_tx(9,readburst3_fullbit);
-	  	 	  spi_dma_tx_init(10, readburst3_fullbit);		//1bit adresu plus 8 bitow na dpowiedz plus 1 dodatkowy
-	  	 	  spi_dma_rx_init(10, recBufferSPI2);
-	  	 	  spi_enable(SPI2);
-
-	  	 	spi_dma_tx_enable();
-	  	 	  spi_dma_rx_enable();
-//	  	 	isReceiveComplete=1;
-
-//	  	 	  volatile  uint8_t dbg1= LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_4);
-//	  	 		 	 LL_mDelay(1000);
 //	  	 	CDC_Transmit_FS(recBufferSPI2, 8);
 	  switch (recBuffer[0]) {
 		case 0x11:
@@ -211,7 +175,7 @@ while(isReceiveComplete==0){	//wait for finishing
 			break;
 	}
 	  CDC_Transmit_FS(recBufferSPI2, 10);
-//LL_mDelay(3);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -209,20 +209,10 @@ void DMA1_Channel4_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
 	if(LL_DMA_IsActiveFlag_TC4(DMA1)){
 		LL_DMA_ClearFlag_TC4(DMA1);
-//		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_4);
-//		LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);	//odebral, koniec transmisji
-//
-//		isReceiveComplete=1;	//zakonczenie transmisji
-//		isAnswerAllowed=0;
-
-//		if(LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_4)==0){
 			spi_disable(SPI2);
 			spi_dma_rx_disable();
 			LL_GPIO_SetOutputPin(MYSPI_CS_GPIO_Port, MYSPI_CS_Pin);
 			isReceiveComplete=1;
-
-//		}
-
 	}
 	if(LL_DMA_IsActiveFlag_TE4(DMA1))
 	{
